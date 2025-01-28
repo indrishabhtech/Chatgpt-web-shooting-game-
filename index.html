@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, height=device-height, user-scalable=no">
   <title>Shooting Game</title>
   <style>
-  * {
+    * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -19,6 +19,7 @@ body {
   background: #000;
   color: #fff;
   font-family: Arial, sans-serif;
+  overflow: hidden;
 }
 
 #gameContainer {
@@ -67,8 +68,10 @@ body {
   border-radius: 5px;
   font-size: 16px;
   cursor: pointer;
+  display: none;
     }
-    
+      
+    /* CSS goes here */
   </style>
 </head>
 <body>
@@ -79,8 +82,9 @@ body {
     </div>
     <button id="restartBtn">Restart</button>
   </div>
+  <audio id="shootSound" src="https://freesound.org/data/previews/66/66717_931655-lq.mp3"></audio>
+  <audio id="gameOverSound" src="https://freesound.org/data/previews/477/477106_10225510-lq.mp3"></audio>
   <script>
-    /* JavaScript goes here */
     const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
@@ -89,17 +93,20 @@ canvas.height = window.innerHeight;
 const restartBtn = document.getElementById('restartBtn');
 const joystick = document.getElementById('joystick');
 const stick = document.getElementById('stick');
+const shootSound = document.getElementById('shootSound');
+const gameOverSound = document.getElementById('gameOverSound');
 
 let player, bullets, enemies, score, gameOver;
 
 // Initialize Game
 function init() {
-  player = { x: canvas.width / 2, y: canvas.height - 50, size: 30 };
+  player = { x: canvas.width / 2, y: canvas.height - 70, size: 40 };
   bullets = [];
   enemies = [];
   score = 0;
   gameOver = false;
   spawnEnemies();
+  startShooting();
   animate();
 }
 
@@ -111,6 +118,17 @@ function spawnEnemies() {
       enemies.push({ x: Math.random() * (canvas.width - size), y: -size, size });
     }
   }, 1000);
+}
+
+// Automatic shooting
+function startShooting() {
+  setInterval(() => {
+    if (!gameOver) {
+      bullets.push({ x: player.x + player.size / 2 - 5, y: player.y, size: 10 });
+      shootSound.currentTime = 0;
+      shootSound.play();
+    }
+  }, 500);
 }
 
 // Draw player
@@ -136,6 +154,7 @@ function drawEnemies() {
     enemy.y += 2;
     if (enemy.y > canvas.height) {
       gameOver = true;
+      gameOverSound.play();
     }
     ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
 
@@ -169,6 +188,7 @@ function update() {
     ctx.fillStyle = 'red';
     ctx.font = '40px Arial';
     ctx.fillText('Game Over', canvas.width / 2 - 100, canvas.height / 2);
+    restartBtn.style.display = 'block';
     cancelAnimationFrame(animationId);
   }
 }
@@ -199,17 +219,16 @@ joystick.addEventListener('touchmove', (e) => {
   }
 });
 
-// Shoot bullets
-canvas.addEventListener('touchstart', () => {
-  bullets.push({ x: player.x + player.size / 2 - 5, y: player.y, size: 10 });
-});
-
 // Restart game
-restartBtn.addEventListener('click', init);
+restartBtn.addEventListener('click', () => {
+  restartBtn.style.display = 'none';
+  init();
+});
 
 // Start the game
 init();
     
+    /* JavaScript goes here */
   </script>
 </body>
 </html>
