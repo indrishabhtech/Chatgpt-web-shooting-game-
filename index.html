@@ -4,7 +4,72 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Shooting Game</title>
-  
+  <style>
+  * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: #000;
+  color: #fff;
+  font-family: Arial, sans-serif;
+}
+
+#gameContainer {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#gameCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: url('https://images.unsplash.com/photo-1519074002996-a69e7ac46a42') no-repeat center center / cover;
+}
+
+#joystick {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  width: 100px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+}
+
+#stick {
+  width: 50px;
+  height: 50px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 25px;
+  left: 25px;
+  touch-action: none;
+}
+
+#restartBtn {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  padding: 10px 20px;
+  background: #f00;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+    }
+    
+  </style>
 </head>
 <body>
   <div id="gameContainer">
@@ -14,6 +79,137 @@
     </div>
     <button id="restartBtn">Restart</button>
   </div>
-  <script src="script.js"> </script>
+  <script>
+    /* JavaScript goes here */
+    const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const restartBtn = document.getElementById('restartBtn');
+const joystick = document.getElementById('joystick');
+const stick = document.getElementById('stick');
+
+let player, bullets, enemies, score, gameOver;
+
+// Initialize Game
+function init() {
+  player = { x: canvas.width / 2, y: canvas.height - 50, size: 30 };
+  bullets = [];
+  enemies = [];
+  score = 0;
+  gameOver = false;
+  spawnEnemies();
+  animate();
+}
+
+// Spawn enemies
+function spawnEnemies() {
+  setInterval(() => {
+    if (!gameOver) {
+      const size = Math.random() * 40 + 20;
+      enemies.push({ x: Math.random() * (canvas.width - size), y: -size, size });
+    }
+  }, 1000);
+}
+
+// Draw player
+function drawPlayer() {
+  ctx.fillStyle = 'lime';
+  ctx.fillRect(player.x, player.y, player.size, player.size);
+}
+
+// Draw bullets
+function drawBullets() {
+  ctx.fillStyle = 'yellow';
+  bullets.forEach((bullet, index) => {
+    bullet.y -= 5;
+    if (bullet.y < 0) bullets.splice(index, 1);
+    ctx.fillRect(bullet.x, bullet.y, bullet.size, bullet.size);
+  });
+}
+
+// Draw enemies
+function drawEnemies() {
+  ctx.fillStyle = 'red';
+  enemies.forEach((enemy, index) => {
+    enemy.y += 2;
+    if (enemy.y > canvas.height) {
+      gameOver = true;
+    }
+    ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+
+    // Check collision with bullets
+    bullets.forEach((bullet, bIndex) => {
+      if (
+        bullet.x < enemy.x + enemy.size &&
+        bullet.x + bullet.size > enemy.x &&
+        bullet.y < enemy.y + enemy.size &&
+        bullet.y + bullet.size > enemy.y
+      ) {
+        enemies.splice(index, 1);
+        bullets.splice(bIndex, 1);
+        score++;
+      }
+    });
+  });
+}
+
+// Update game
+function update() {
+  drawPlayer();
+  drawBullets();
+  drawEnemies();
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '20px Arial';
+  ctx.fillText(`Score: ${score}`, 20, 30);
+
+  if (gameOver) {
+    ctx.fillStyle = 'red';
+    ctx.font = '40px Arial';
+    ctx.fillText('Game Over', canvas.width / 2 - 100, canvas.height / 2);
+    cancelAnimationFrame(animationId);
+  }
+}
+
+// Animate game
+let animationId;
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  update();
+  if (!gameOver) animationId = requestAnimationFrame(animate);
+}
+
+// Handle joystick movement
+let joystickActive = false;
+joystick.addEventListener('touchstart', () => (joystickActive = true));
+joystick.addEventListener('touchend', () => (joystickActive = false));
+joystick.addEventListener('touchmove', (e) => {
+  if (joystickActive) {
+    const touch = e.touches[0];
+    const rect = joystick.getBoundingClientRect();
+    const x = touch.clientX - rect.left - stick.offsetWidth / 2;
+    const y = touch.clientY - rect.top - stick.offsetHeight / 2;
+    stick.style.transform = `translate(${x}px, ${y}px)`;
+
+    // Move player based on joystick position
+    if (x > 25) player.x += 5;
+    if (x < -25) player.x -= 5;
+  }
+});
+
+// Shoot bullets
+canvas.addEventListener('touchstart', () => {
+  bullets.push({ x: player.x + player.size / 2 - 5, y: player.y, size: 10 });
+});
+
+// Restart game
+restartBtn.addEventListener('click', init);
+
+// Start the game
+init();
+    
+  </script>
 </body>
 </html>
